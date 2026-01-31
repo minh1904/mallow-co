@@ -1,27 +1,27 @@
 'use client';
-
 import { cn } from '@/lib/utils';
-import { Button } from '@/share/ui/button';
-import { Icon } from '@/share/ui/icon';
+import React, { forwardRef } from 'react';
 
-interface ButtonItemProps {
+interface ButtonItemProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
-  icon: string;
-  className?: string;
 }
 
-const ButtonItem = ({ children, icon, className }: ButtonItemProps) => {
-  return (
-    <Button
-      className={cn(
-        'font-azeret-mono text-md uppercase bg-gray-200 text-black hover:bg-bg-gray-200',
-        className,
-      )}
-    >
-      <Icon icon={icon} />
-      {children}
-    </Button>
-  );
-};
-
+const ButtonItem = forwardRef<HTMLButtonElement, ButtonItemProps>(
+  ({ children, className, style, ...props }, ref) => {
+    return (
+      <button
+        ref={ref}
+        {...props}
+        style={style}
+        className={cn(
+          'absolute top-0 left-0 m-0 font-bold uppercase bg-white text-black rounded-xl shadow-xl border-2 border-blue-500 will-change-transform pointer-events-auto z-20',
+          className,
+        )}
+      >
+        {children}
+      </button>
+    );
+  },
+);
+ButtonItem.displayName = 'ButtonItem';
 export default ButtonItem;

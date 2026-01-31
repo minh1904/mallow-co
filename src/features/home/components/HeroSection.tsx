@@ -1,170 +1,230 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
 import Matter from 'matter-js';
-import { cn } from '@/lib/utils';
-import TextItem from './TextItem';
+import React, { useEffect, useRef, useState } from 'react';
+import ButtonItem from './ButtonItem';
+import Image from 'next/image';
 
-const ITEMS = [
-  { id: 'item-1', text: 'Creative', color: 'bg-white text-black' },
-  { id: 'item-2', text: 'Studio', color: 'bg-primary' },
-  { id: 'item-3', text: '2026', color: 'bg-black text-white' },
-];
+interface PhysicsItem {
+  id: string | number;
+  label?: string;
+  src?: string;
+  w: number;
+  h: number;
+  initialX: number;
+  initialY: number;
+  type: 'button' | 'photo';
+}
 
 export const HeroSection = () => {
-  const boxRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const [isReady, setIsReady] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // 1. Theo dõi kích thước màn hình
+  // Quản lý Refs cho DOM
+  const itemRefs = useRef<Map<string | number, HTMLElement>>(new Map());
+  const engineRef = useRef(Matter.Engine.create({ enableSleeping: true }));
+
+  // Data khởi tạo
+  const [items] = useState<PhysicsItem[]>([
+    {
+      id: 1,
+      label: 'Work',
+      w: 140,
+      h: 50,
+      initialX: 200,
+      initialY: 100,
+      type: 'button',
+    },
+    {
+      id: 2,
+      label: 'Creative',
+      w: 160,
+      h: 50,
+      initialX: 400,
+      initialY: 150,
+      type: 'button',
+    },
+    {
+      id: 3,
+      label: 'Next.js',
+      w: 120,
+      h: 50,
+      initialX: 600,
+      initialY: 100,
+      type: 'button',
+    },
+    {
+      id: 'p1',
+      src: '/images/img_1.jpg',
+      w: 150,
+      h: 150,
+      initialX: 300,
+      initialY: 200, // Đổi từ -100 sang 200 để thấy ngay
+      type: 'photo',
+    },
+    {
+      id: 'p2',
+      src: '/images/img_2.jpg',
+      w: 200,
+      h: 140,
+      initialX: 700,
+      initialY: 300, // Đổi từ -200 sang 300 để thấy ngay
+      type: 'photo',
+    },
+  ]);
+
   useEffect(() => {
-    const handleResize = () => {
-      if (boxRef.current) {
-        setDimensions({
-          width: boxRef.current.clientWidth,
-          height: boxRef.current.clientHeight,
-        });
-      }
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    if (!containerRef.current || !canvasRef.current) return;
 
-  // 2. Khởi tạo vật lý Matter.js
-  useEffect(() => {
-    if (dimensions.width === 0 || !boxRef.current) return;
+    const { Render, Runner, Bodies, Composite, Events, Engine } = Matter;
+    const engine = engineRef.current;
+    const width = containerRef.current.offsetWidth;
+    const height = containerRef.current.offsetHeight;
 
-    const {
-      Engine,
-      Render,
-      Composite,
-      Bodies,
-      Runner,
-      Events,
-      Mouse,
-      MouseConstraint,
-    } = Matter;
-    const { width, height } = dimensions;
-
-    // Tạo Engine & World
-    const engine = Engine.create({ gravity: { x: 0, y: 1 } });
-
-    // Tạo Runner (vòng lặp update)
-    const runner = Runner.create();
-
-    // TẠO TƯỜNG VÔ HÌNH (Dày 100px để vật thể không bị văng ra ngoài)
-    const wallThick = 100;
-    const ground = Bodies.rectangle(
-      width / 2,
-      height + wallThick / 2,
-      width,
-      wallThick,
-      { isStatic: true },
-    );
-    const leftWall = Bodies.rectangle(
-      -wallThick / 2,
-      height / 2,
-      wallThick,
-      height,
-      { isStatic: true },
-    );
-    const rightWall = Bodies.rectangle(
-      width + wallThick / 2,
-      height / 2,
-      wallThick,
-      height,
-      { isStatic: true },
-    );
-
-    // ĐO VÀ TẠO VẬT THỂ CHO TỪNG BUTTON
-    const bodiesData: { body: Matter.Body; element: HTMLElement }[] = [];
-
-    ITEMS.forEach((item, index) => {
-      const element = document.getElementById(item.id);
-      if (element) {
-        const rect = element.getBoundingClientRect();
-
-        // Tạo Body khớp chính xác với size thực tế của Button
-        const body = Bodies.rectangle(
-          width / 2 + (index - 1) * 100, // X: Rơi lệch nhau chút
-          -200 * (index + 1), // Y: Rơi từ trên cao xuống
-          rect.width,
-          rect.height,
-          {
-            restitution: 0.6, // Độ nảy
-            friction: 0.1,
-            chamfer: { radius: 20 }, // Bo góc vật lý
-          },
-        );
-
-        bodiesData.push({ body, element });
-      }
+    // 1. Cấu hình Render (Dùng để debug khung vật lý)
+    const render = Render.create({
+      element: containerRef.current,
+      engine: engine,
+      canvas: canvasRef.current,
+      options: {
+        width,
+        height,
+        background: 'transparent',
+        wireframes: false, // Bật true để thấy khung xanh va chạm
+      },
     });
 
-    // Thêm tương tác Chuột (Cực kỳ quan trọng cho Creative Site)
-    const mouse = Mouse.create(boxRef.current);
-    const mouseConstraint = MouseConstraint.create(engine, {
-      mouse: mouse,
-      constraint: { stiffness: 0.2, render: { visible: false } },
+    // 2. Tạo tường bao quanh sát mép
+    const wallOptions = { isStatic: true, restitution: 0.9, friction: 0.1 };
+    const wallThickness = 100;
+    const walls = [
+      Bodies.rectangle(
+        width / 2,
+        height + 50,
+        width,
+        wallThickness,
+        wallOptions,
+      ), // Sàn
+      Bodies.rectangle(width / 2, -50, width, wallThickness, wallOptions), // Trần
+      Bodies.rectangle(-50, height / 2, wallThickness, height, wallOptions), // Trái
+      Bodies.rectangle(
+        width + 50,
+        height / 2,
+        wallThickness,
+        height,
+        wallOptions,
+      ), // Phải
+    ];
+
+    // 3. Tạo Physics Bodies & Map chúng với ID
+    const bodiesMap = new Map<string | number, Matter.Body>();
+    const physicsBodies = items.map((item) => {
+      const body = Bodies.rectangle(
+        item.initialX,
+        item.initialY,
+        item.w,
+        item.h,
+        {
+          restitution: 0.7,
+          frictionAir: 0.03,
+          friction: 0.2,
+          chamfer: { radius: item.type === 'button' ? 12 : 15 },
+        },
+      );
+      bodiesMap.set(item.id, body);
+      return body;
     });
 
-    // Thêm tất cả vào World
-    Composite.add(engine.world, [
-      ground,
-      leftWall,
-      rightWall,
-      mouseConstraint,
-      ...bodiesData.map((d) => d.body),
-    ]);
+    Composite.add(engine.world, [...walls, ...physicsBodies]);
 
-    // ĐỒNG BỘ HÓA (Sync Matter.js -> DOM)
-    Events.on(engine, 'afterUpdate', () => {
-      bodiesData.forEach(({ body, element }) => {
-        const { x, y } = body.position;
-        const angle = body.angle;
+    // 4. Vòng lặp đồng bộ tập trung (Mượt 60fps)
+    const update = () => {
+      items.forEach((item) => {
+        const domEl = itemRefs.current.get(item.id);
+        const body = bodiesMap.get(item.id);
+        if (domEl && body) {
+          const { x, y } = body.position;
+          const angle = body.angle;
 
-        // Dùng translate -50% -50% để tâm của HTML khớp với tâm của Body
-        element.style.transform = `translate(${x}px, ${y}px) rotate(${angle}rad) translate(-50%, -50%)`;
+          // Chuyển đổi tọa độ từ Tâm (Matter) sang Góc (CSS)
+          domEl.style.transform = `translate(${x - item.w / 2}px, ${y - item.h / 2}px) rotate(${angle}rad)`;
+        }
       });
-      // Hiện UI sau khi frame đầu tiên đã tính toán xong vị trí
-      setIsReady(true);
-    });
+    };
 
+    Events.on(engine, 'afterUpdate', update);
+
+    Render.run(render);
+    const runner = Runner.create();
     Runner.run(runner, engine);
 
-    // Cleanup khi component unmount hoặc resize
     return () => {
+      Render.stop(render);
       Runner.stop(runner);
+      Events.off(engine, 'afterUpdate', update);
       Engine.clear(engine);
       Composite.clear(engine.world, false);
     };
-  }, [dimensions]);
+  }, [items]);
 
   return (
     <div
-      ref={boxRef}
-      className="relative w-full h-screen overflow-hidden bg-white select-none touch-none"
+      ref={containerRef}
+      className="relative w-full h-screen bg-slate-950 overflow-hidden select-none"
     >
-      {/* 3. Render HTML Elements */}
-      {ITEMS.map((item) => (
-        <div
-          key={item.id}
-          id={item.id}
-          // opacity-0 lúc đầu để tránh nút bị "nháy" ở góc màn hình
-          className={cn(
-            'absolute top-0 left-0 will-change-transform',
-            isReady ? 'opacity-100' : 'opacity-0',
-          )}
-          style={{ position: 'absolute' }}
-        >
-          <TextItem className={item.color}>{item.text}</TextItem>
-        </div>
-      ))}
+      {/* Lớp Canvas debug */}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 pointer-events-none opacity-30 z-0"
+      />
 
-      <div className="absolute inset-0 flex items-center justify-center -z-10 opacity-10">
-        <h1 className="text-[20vw] font-bold uppercase">Mallow</h1>
-      </div>
+      {items.map((item) => {
+        // Tọa độ Inline Style ban đầu để tránh bị nhảy hình (FOUC)
+        const initialStyle: React.CSSProperties = {
+          width: item.w,
+          height: item.h,
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          transform: `translate(${item.initialX - item.w / 2}px, ${item.initialY - item.h / 2}px)`,
+        };
+
+        if (item.type === 'button') {
+          return (
+            <ButtonItem
+              key={item.id}
+              ref={(el) => {
+                if (el) itemRefs.current.set(item.id, el);
+                else itemRefs.current.delete(item.id);
+              }}
+              style={initialStyle}
+            >
+              {item.label}
+            </ButtonItem>
+          );
+        }
+
+        return (
+          <div
+            key={item.id}
+            ref={(el) => {
+              if (el) itemRefs.current.set(item.id, el);
+              else itemRefs.current.delete(item.id);
+            }}
+            style={{ ...initialStyle, borderRadius: '15px' }}
+            className="overflow-hidden shadow-2xl border-2 border-white/10 bg-gray-800 will-change-transform z-20"
+          >
+            <Image
+              src={item.src}
+              width={599}
+              height={599}
+              alt=""
+              draggable={false}
+              className="w-full h-full object-cover pointer-events-none select-none"
+            />
+          </div>
+        );
+      })}
     </div>
   );
 };
