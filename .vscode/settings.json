@@ -1,23 +1,8 @@
 {
-  "cSpell.words": [
-    "azeret",
-    "chạy",
-    "Dùng",
-    "iconify",
-    "Khai",
-    "Không",
-    "PHẦN",
-    "quan",
-    "quản",
-    "tabler",
-    "thay",
-    "thiết",
-    "THIẾU",
-    "tính",
-    "toán",
-    "tránh",
-    "trọng",
-    "xuống"
-  ],
-  "cSpell.ignoreWords": ["wireframes"]
+	"editor.formatOnSave": true,
+	"editor.defaultFormatter": "biomejs.biome",
+	"editor.codeActionsOnSave": {
+		"source.fixAll.biome": "always",
+		"source.organizeImports.biome": "always"
+	}
 }

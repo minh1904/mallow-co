@@ -5,8 +5,8 @@ import { useEffect, useRef } from 'react';
 
 interface PhysicsItem {
   id: string | number;
-  w: number;
-  h: number;
+  w?: number;
+  h?: number;
 }
 
 export const useMatterPhysics = (
@@ -16,6 +16,9 @@ export const useMatterPhysics = (
 ) => {
   const itemRefs = useRef<Map<string | number, HTMLElement>>(new Map());
   const bodiesMap = useRef<Map<string | number, Matter.Body>>(new Map());
+  const sizesMap = useRef<Map<string | number, { w: number; h: number }>>(
+    new Map(),
+  ); // Cache sizes
   const engineRef = useRef<Matter.Engine | null>(null);
   const runnerRef = useRef<Matter.Runner | null>(null);
   const renderRef = useRef<Matter.Render | null>(null);
@@ -116,11 +119,27 @@ export const useMatterPhysics = (
       const domEl = itemRefs.current.get(item.id);
       if (!domEl) return;
 
+      // Read size from DOM if not provided in data
+      const rect = domEl.getBoundingClientRect();
+      const itemWidth = item.w ?? rect.width;
+      const itemHeight = item.h ?? rect.height;
+
+      // Skip if size is invalid
+      if (itemWidth === 0 || itemHeight === 0) {
+        console.warn(
+          `Item ${item.id} has invalid size: ${itemWidth}x${itemHeight}`,
+        );
+        return;
+      }
+
+      // Cache size for consistent rendering
+      sizesMap.current.set(item.id, { w: itemWidth, h: itemHeight });
+
       // Vị trí khởi đầu ngẫu nhiên theo chiều ngang
-      const startX = Math.random() * (width - item.w) + item.w / 2;
+      const startX = Math.random() * (width - itemWidth) + itemWidth / 2;
       const startY = -200 - index * 150; // Rơi lần lượt từ trên xuống
 
-      const body = Bodies.rectangle(startX, startY, item.w, item.h, {
+      const body = Bodies.rectangle(startX, startY, itemWidth, itemHeight, {
         restitution: config.restitution,
         friction: config.friction,
         frictionAir: config.frictionAir,
@@ -173,13 +192,14 @@ export const useMatterPhysics = (
       items.forEach((item) => {
         const domEl = itemRefs.current.get(item.id);
         const body = bodiesMap.current.get(item.id);
+        const size = sizesMap.current.get(item.id); // Use cached size
 
-        if (domEl && body) {
+        if (domEl && body && size) {
           const { x, y } = body.position;
           const angle = body.angle;
 
-          // Transform với GPU acceleration
-          domEl.style.transform = `translate3d(${x - item.w / 2}px, ${y - item.h / 2}px, 0) rotate(${angle}rad)`;
+          // Transform với GPU acceleration using cached size
+          domEl.style.transform = `translate3d(${x - size.w / 2}px, ${y - size.h / 2}px, 0) rotate(${angle}rad)`;
           domEl.style.visibility = 'visible';
         }
       });
@@ -210,6 +230,7 @@ export const useMatterPhysics = (
       }
 
       bodiesMap.current.clear();
+      sizesMap.current.clear(); // Clear cached sizes
     };
   }, [items]);
 

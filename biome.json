@@ -1,0 +1,20 @@
+{
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"nursery": {
+				"useTailwindAttributes": {
+					"level": "warn",
+					"options": {
+						"templateFunctions": ["clsx", "twMerge", "tw"]
+					}
+				}
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	}
+}
