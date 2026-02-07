@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useMemo, useRef } from "react";
-import { useMatterPhysics } from "../hooks/useMatterPhysic";
+import { useMatterPhysics } from "../hooks/useMatterPhysics";
 
 interface PhysicsItem {
 	id: string | number;
@@ -15,7 +15,6 @@ interface PhysicsItem {
 export const HeroSection = () => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
-
 	const items = useMemo<PhysicsItem[]>(
 		() => [
 			{ id: "btn-1", label: "Work", type: "button" },
@@ -38,13 +37,11 @@ export const HeroSection = () => {
 		],
 		[],
 	);
-
 	const { itemRefs } = useMatterPhysics(containerRef, canvasRef, items);
-
 	return (
 		<div
 			ref={containerRef}
-			className="relative w-full h-screen overflow-hidden select-none"
+			className="relative w-full h-screen overflow-hidden select-none bg-gray-900"
 		>
 			<canvas
 				ref={canvasRef}
@@ -60,7 +57,8 @@ export const HeroSection = () => {
 								if (el) itemRefs.current.set(item.id, el);
 								else itemRefs.current.delete(item.id);
 							}}
-							className="invisible opacity-0 absolute top-0 left-0 m-0 px-6 py-3 rounded-full font-bold uppercase bg-white text-black shadow-xl will-change-transform pointer-events-auto z-20 transition-opacity duration-700 ease-out"
+							className="absolute top-0 left-0 m-0 px-6 py-3 rounded-full font-bold uppercase bg-white text-black shadow-xl will-change-transform pointer-events-auto z-20"
+							style={{ visibility: "hidden" }}
 						>
 							{item.label}
 						</button>
@@ -78,7 +76,8 @@ export const HeroSection = () => {
 						height={160}
 						alt=""
 						draggable={false}
-						className="w-36 h-36 absolute left-0 top-0 object-cover pointer-events-none select-none opacity-0 transition-opacity duration-700 ease-out"
+						className="w-36 h-36 absolute left-0 top-0 object-cover pointer-events-auto select-none"
+						style={{ visibility: "hidden" }}
 						priority={true}
 					/>
 				);
