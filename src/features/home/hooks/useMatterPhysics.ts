@@ -1,257 +1,255 @@
-import Matter from "matter-js";
-import { useEffect, useRef } from "react";
+import Matter, { type Mouse } from 'matter-js';
+import { useEffect, useRef } from 'react';
 
 interface PhysicsItem {
-	id: string | number;
-	w?: number;
-	h?: number;
-	dropX?: number;
-	dropY?: number;
+  id: string | number;
+  w?: number;
+  h?: number;
+  dropX?: number;
+  dropY?: number;
+}
+
+interface ExtendedMouse extends Mouse {
+  mousewheel: EventListener;
 }
 
 const config = {
-	density: 0.002,
-	friction: 0.15,
-	frictionAir: 0.01,
-	gravity: { scale: 0.001, x: 0, y: 1 },
-	mouseStiffness: 0.6,
-	restitution: 0.5,
-	wallThickness: 200,
+  density: 0.002,
+  friction: 0.15,
+  frictionAir: 0.01,
+  gravity: { scale: 0.001, x: 0, y: 1 },
+  mouseStiffness: 0.6,
+  restitution: 1,
+  wallThickness: 200,
 };
 
 export const useMatterPhysics = (
-	containerRef: React.RefObject<HTMLDivElement | null>,
-	canvasRef: React.RefObject<HTMLCanvasElement | null>,
-	items: PhysicsItem[],
+  containerRef: React.RefObject<HTMLDivElement | null>,
+  canvasRef: React.RefObject<HTMLCanvasElement | null>,
+  items: PhysicsItem[],
 ) => {
-	const itemRefs = useRef<Map<string | number, HTMLElement>>(new Map());
-	const bodiesMap = useRef<Map<string | number, Matter.Body>>(new Map());
-	const sizesMap = useRef<Map<string | number, { w: number; h: number }>>(
-		new Map(),
-	);
-	const engineRef = useRef<Matter.Engine | null>(null);
-	const runnerRef = useRef<Matter.Runner | null>(null);
-	const renderRef = useRef<Matter.Render | null>(null);
-	const wallsRef = useRef<Matter.Body[]>([]);
-	const containerSizeRef = useRef({ height: 0, width: 0 });
-	const rafRef = useRef<number>(0);
+  const itemRefs = useRef<Map<string | number, HTMLElement>>(new Map());
+  const bodiesMap = useRef<Map<string | number, Matter.Body>>(new Map());
+  const sizesMap = useRef<Map<string | number, { w: number; h: number }>>(
+    new Map(),
+  );
+  const engineRef = useRef<Matter.Engine | null>(null);
+  const runnerRef = useRef<Matter.Runner | null>(null);
+  const renderRef = useRef<Matter.Render | null>(null);
+  const wallsRef = useRef<Matter.Body[]>([]);
+  const containerSizeRef = useRef({ height: 0, width: 0 });
+  const rafRef = useRef<number>(0);
 
-	useEffect(() => {
-		if (!containerRef.current || !canvasRef.current) return;
+  useEffect(() => {
+    if (!containerRef.current || !canvasRef.current) return;
 
-		const {
-			Engine,
-			Render,
-			Runner,
-			Bodies,
-			Composite,
-			Mouse,
-			MouseConstraint,
-			Body,
-		} = Matter;
+    const currentBodies = bodiesMap.current;
+    const currentSizes = sizesMap.current;
 
-		const engine = Engine.create({
-			constraintIterations: 10,
-			gravity: { scale: 0.001, x: 0, y: 1 },
-			positionIterations: 20,
-			timing: { timeScale: 1 },
-			velocityIterations: 16,
-		});
-		engineRef.current = engine;
+    const {
+      Engine,
+      Render,
+      Runner,
+      Bodies,
+      Composite,
+      Mouse,
+      MouseConstraint,
+      Body,
+    } = Matter;
 
-		const containerRect = containerRef.current.getBoundingClientRect();
-		const { width, height } = containerRect;
-		containerSizeRef.current = { height, width };
+    const engine = Engine.create({
+      constraintIterations: 10,
+      gravity: { scale: 0.001, x: 0, y: 1 },
+      positionIterations: 20,
+      timing: { timeScale: 1 },
+      velocityIterations: 16,
+    });
+    engineRef.current = engine;
 
-		const render = Render.create({
-			canvas: canvasRef.current,
-			element: containerRef.current,
-			engine: engine,
-			options: {
-				background: "transparent",
-				height,
-				width,
-				wireframes: false,
-			},
-		});
-		renderRef.current = render;
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const { width, height } = containerRect;
+    containerSizeRef.current = { height, width };
 
-		const createWalls = (w: number, h: number) => {
-			const wallOptions = { isStatic: true, restitution: 0.4 };
-			return [
-				// Sàn (dưới)
-				Bodies.rectangle(
-					w / 2,
-					h + config.wallThickness / 2,
-					w,
-					config.wallThickness,
-					wallOptions,
-				),
-				// Tường trái
-				Bodies.rectangle(
-					-config.wallThickness / 2,
-					h / 2,
-					config.wallThickness,
-					h,
-					wallOptions,
-				),
-				// Tường phải
-				Bodies.rectangle(
-					w + config.wallThickness / 2,
-					h / 2,
-					config.wallThickness,
-					h,
-					wallOptions,
-				),
-				// Tường trên
-				Bodies.rectangle(
-					w / 2,
-					-config.wallThickness / 2,
-					w,
-					config.wallThickness,
-					wallOptions,
-				),
-			];
-		};
+    const render = Render.create({
+      canvas: canvasRef.current,
+      element: containerRef.current,
+      engine: engine,
+      options: {
+        background: 'transparent',
+        height,
+        width,
+        wireframes: false,
+      },
+    });
+    renderRef.current = render;
 
-		const walls = createWalls(width, height);
-		wallsRef.current = walls;
-		Composite.add(engine.world, walls);
+    const createWalls = (w: number, h: number) => {
+      const wallOptions = { isStatic: true, restitution: 1 };
+      return [
+        // Sàn (dưới)
+        Bodies.rectangle(
+          w / 2,
+          h + config.wallThickness / 2,
+          w,
+          config.wallThickness,
+          wallOptions,
+        ),
+        // Tường trái
+        Bodies.rectangle(
+          -config.wallThickness / 2,
+          h / 2,
+          config.wallThickness,
+          h,
+          wallOptions,
+        ),
+        // Tường phải
+        Bodies.rectangle(
+          w + config.wallThickness / 2,
+          h / 2,
+          config.wallThickness,
+          h,
+          wallOptions,
+        ),
+        // Tường trên
+        Bodies.rectangle(
+          w / 2,
+          -config.wallThickness / 2,
+          w,
+          config.wallThickness,
+          wallOptions,
+        ),
+      ];
+    };
 
-		items.forEach((item, index) => {
-			const domEl = itemRefs.current.get(item.id);
-			if (!domEl) return;
+    const walls = createWalls(width, height);
+    wallsRef.current = walls;
+    Composite.add(engine.world, walls);
 
-			const rect = domEl.getBoundingClientRect();
-			const itemWidth = item.w ?? rect.width;
-			const itemHeight = item.h ?? rect.height;
+    items.forEach((item, index) => {
+      const domEl = itemRefs.current.get(item.id);
+      if (!domEl) return;
 
-			const startX =
-				item.dropX ?? Math.random() * (containerRect.width - itemWidth);
-			const startY = item.dropY ?? containerRect.height * 0.1 + index * 10;
-			const startRotation = (Math.random() - 0.5) * Math.PI;
+      const rect = domEl.getBoundingClientRect();
+      const itemWidth = item.w ?? rect.width;
+      const itemHeight = item.h ?? rect.height;
 
-			sizesMap.current.set(item.id, { h: itemHeight, w: itemWidth });
+      // Logic tính toán theo tỉ lệ:
+      // Nếu dropX > 0 và <= 1, tính theo % chiều rộng container
+      // Ngược lại nếu > 1 hoặc undefined, dùng giá trị pixel hoặc random
+      const startX =
+        item.dropX !== undefined
+          ? item.dropX <= 1
+            ? item.dropX * width
+            : item.dropX
+          : Math.random() * (width - itemWidth) + itemWidth / 2;
 
-			const body = Bodies.rectangle(startX, startY, itemWidth, itemHeight, {
-				density: config.density,
-				friction: config.friction,
-				frictionAir: config.frictionAir,
-				restitution: config.restitution,
-			});
+      const startY =
+        item.dropY !== undefined
+          ? item.dropY <= 1
+            ? item.dropY * height
+            : item.dropY
+          : height * 0.1 + index * 10;
 
-			Body.setAngle(body, startRotation);
+      const startRotation =
+        item.dropX !== undefined && item.dropY !== undefined
+          ? 0
+          : (Math.random() - 0.5) * Math.PI;
 
-			bodiesMap.current.set(item.id, body);
-			Composite.add(engine.world, body);
+      sizesMap.current.set(item.id, { h: itemHeight, w: itemWidth });
 
-			domEl.style.position = "absolute";
-			domEl.style.willChange = "transform";
-		});
+      const body = Bodies.rectangle(startX, startY, itemWidth, itemHeight, {
+        density: config.density,
+        friction: config.friction,
+        frictionAir: config.frictionAir,
+        restitution: config.restitution,
+      });
 
-		const mouse = Mouse.create(containerRef.current);
+      Body.setAngle(body, startRotation);
 
-		const update = () => {
-			items.forEach((item) => {
-				const domEl = itemRefs.current.get(item.id);
-				const body = bodiesMap.current.get(item.id);
-				const size = sizesMap.current.get(item.id);
+      currentBodies.set(item.id, body);
+      Composite.add(engine.world, body);
 
-				if (domEl && body && size) {
-					const { x, y } = body.position;
-					const angle = body.angle;
+      domEl.style.position = 'absolute';
+      domEl.style.willChange = 'transform';
+    });
 
-					domEl.style.transform = `translate3d(${x - size.w / 2}px, ${y - size.h / 2}px, 0) rotate(${angle}rad)`;
-					domEl.style.visibility = "visible";
-				}
-			});
-			rafRef.current = requestAnimationFrame(update);
-		};
+    const mouse = Mouse.create(containerRef.current);
 
-		const mouseConstraint = MouseConstraint.create(engine, {
-			constraint: {
-				render: { visible: false },
-				stiffness: config.mouseStiffness,
-			},
-			mouse,
-		});
-		Composite.add(engine.world, mouseConstraint);
+    const update = () => {
+      items.forEach((item) => {
+        const domEl = itemRefs.current.get(item.id);
+        const body = bodiesMap.current.get(item.id);
+        const size = sizesMap.current.get(item.id);
 
-		const handleResize = () => {
-			if (!containerRef.current || !renderRef.current || !engineRef.current)
-				return;
+        if (domEl && body && size) {
+          const { x, y } = body.position;
+          const angle = body.angle;
 
-			const newRect = containerRef.current.getBoundingClientRect();
-			const newWidth = newRect.width;
-			const newHeight = newRect.height;
+          domEl.style.transform = `translate3d(${x - size.w / 2}px, ${y - size.h / 2}px, 0) rotate(${angle}rad)`;
+          domEl.style.visibility = 'visible';
+        }
+      });
+      rafRef.current = requestAnimationFrame(update);
+    };
 
-			const oldWidth = containerSizeRef.current.width;
-			const oldHeight = containerSizeRef.current.height;
-			containerSizeRef.current = { height: newHeight, width: newWidth };
+    const mouseConstraint = MouseConstraint.create(engine, {
+      constraint: {
+        render: { visible: false },
+        stiffness: config.mouseStiffness,
+      },
+      mouse,
+    });
+    mouse.element.removeEventListener(
+      'wheel',
+      (mouse as ExtendedMouse).mousewheel,
+    );
+    Composite.add(engine.world, mouseConstraint);
 
-			const scaleX = newWidth / oldWidth;
-			const scaleY = newHeight / oldHeight;
+    const handleResize = () => {
+      window.location.reload();
+    };
 
-			renderRef.current.canvas.width = newWidth;
-			renderRef.current.canvas.height = newHeight;
-			renderRef.current.options.width = newWidth;
-			renderRef.current.options.height = newHeight;
+    let resizeTimeout: NodeJS.Timeout;
+    const debouncedResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(handleResize, 150);
+    };
 
-			wallsRef.current.forEach((wall) => {
-				Composite.remove(engineRef.current!.world, wall);
-			});
+    window.addEventListener('resize', debouncedResize);
+    const runner = Runner.create();
+    runnerRef.current = runner;
+    Runner.run(runner, engine);
+    Render.run(render);
+    update();
 
-			const newWalls = createWalls(newWidth, newHeight);
-			wallsRef.current = newWalls;
-			Composite.add(engineRef.current.world, newWalls);
+    return () => {
+      window.removeEventListener('resize', debouncedResize);
+      clearTimeout(resizeTimeout);
 
-			bodiesMap.current.forEach((body) => {
-				const currentPos = body.position;
-				const newX = currentPos.x * scaleX;
-				const newY = currentPos.y * scaleY;
+      const currentRaf = rafRef.current;
+      const currentRunner = runnerRef.current;
+      const currentRender = renderRef.current;
+      const currentEngine = engineRef.current;
 
-				const clampedX = Math.max(0, Math.min(newX, newWidth));
-				const clampedY = Math.max(0, Math.min(newY, newHeight));
+      if (currentRaf) {
+        cancelAnimationFrame(currentRaf);
+      }
+      if (currentRunner) {
+        Runner.stop(currentRunner);
+      }
+      if (currentRender) {
+        Render.stop(currentRender);
+      }
+      if (currentEngine) {
+        Engine.clear(currentEngine);
+        Composite.clear(currentEngine.world, false);
+      }
 
-				Body.setPosition(body, { x: clampedX, y: clampedY });
-				Body.setVelocity(body, { x: 0, y: 0 });
-				Body.setAngularVelocity(body, 0);
-			});
-		};
+      currentBodies.clear();
+      currentSizes.clear();
+      wallsRef.current = [];
+    };
+  }, [items, canvasRef, containerRef]);
 
-		let resizeTimeout: NodeJS.Timeout;
-		const debouncedResize = () => {
-			clearTimeout(resizeTimeout);
-			resizeTimeout = setTimeout(handleResize, 150);
-		};
-
-		window.addEventListener("resize", debouncedResize);
-		const runner = Runner.create();
-		runnerRef.current = runner;
-		Runner.run(runner, engine);
-		Render.run(render);
-		update();
-
-		return () => {
-			if (rafRef.current) {
-				cancelAnimationFrame(rafRef.current);
-			}
-			if (runnerRef.current) {
-				Runner.stop(runnerRef.current);
-			}
-			if (renderRef.current) {
-				Render.stop(renderRef.current);
-			}
-			if (engineRef.current) {
-				Engine.clear(engineRef.current);
-				Composite.clear(engineRef.current.world, false);
-			}
-
-			bodiesMap.current.clear();
-			sizesMap.current.clear();
-			wallsRef.current = [];
-		};
-	}, [items, canvasRef, containerRef]);
-
-	return { itemRefs };
+  return { itemRefs };
 };
