@@ -1,10 +1,11 @@
+import { ProjectHeader } from './components/ProjectHeader';
+import { ProjectMain } from './components/ProjectMain';
+
 export const ProjectSection = () => {
   return (
-    <div className="w-full p-10">
-      <p className="mx-auto max-w-5xl pt-30 text-center font-medium text-5xl">
-        We look for brand partners who want to dream big, stand out and shake
-        things up.
-      </p>
-    </div>
+    <section className="w-full space-y-5 p-10">
+      <ProjectHeader />
+      <ProjectMain />
+    </section>
   );
 };

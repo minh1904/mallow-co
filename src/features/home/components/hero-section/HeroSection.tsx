@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useRef } from 'react';
-import { getItems } from '../../constant';
+import { getItems } from '../../constants/constant';
 import { useMatterPhysics } from '../../hooks/useMatterPhysics';
 import { HeroItem } from './components/HeroItem';
 import { HeroText } from './components/HeroText';
