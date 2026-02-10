@@ -28,8 +28,7 @@
       "!**/.next",
       "!**/vite-env.d.ts",
       "!**/routeTree.gen.ts",
-      "!**/package.json",
-      "!core"
+      "!**/package.json"
     ]
   },
   "formatter": {

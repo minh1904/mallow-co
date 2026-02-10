@@ -161,6 +161,10 @@ export const useMatterPhysics = (
         density: config.density,
         friction: config.friction,
         frictionAir: config.frictionAir,
+        render: {
+          opacity: 0,
+          visible: true,
+        },
         restitution: config.restitution,
       });
 
