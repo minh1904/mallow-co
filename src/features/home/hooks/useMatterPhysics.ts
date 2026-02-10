@@ -19,7 +19,7 @@ const config = {
   frictionAir: 0.01,
   gravity: { scale: 0.001, x: 0, y: 1 },
   mouseStiffness: 0.6,
-  restitution: 1,
+  restitution: 0.7,
   wallThickness: 200,
 };
 

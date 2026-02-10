@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
+import { SmoothScroll } from '@/providers/SmoothScroll';
 
 const generalSans = localFont({
+  display: 'swap',
   src: [
     {
       path: '../../public/fonts/GeneralSans-Variable.woff2',
@@ -16,9 +18,9 @@ const generalSans = localFont({
 
   variable: '--font-general-sans',
   weight: '200 700',
-  display: 'swap',
 });
 const azeretMono = localFont({
+  display: 'swap',
   src: [
     {
       path: '../../public/fonts/AzeretMono-Variable.woff2',
@@ -32,12 +34,11 @@ const azeretMono = localFont({
 
   variable: '--font-azeret-mono',
   weight: '200 700',
-  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: 'Mallow & Co',
   description: 'Mallow',
+  title: 'Mallow & Co',
 };
 
 export default function RootLayout({
@@ -51,7 +52,7 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${generalSans.variable} ${azeretMono.variable} antialiased`}
       >
-        {children}
+        <SmoothScroll>{children}</SmoothScroll>
       </body>
     </html>
   );

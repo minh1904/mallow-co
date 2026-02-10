@@ -31,7 +31,12 @@ export interface Project {
   id: number | string;
   title: string;
   description: string;
-  tags: ProjectTag[];
+  tags: {
+    id: number | string;
+    label: ProjectTag;
+    dropX: number;
+    dropY: number;
+  }[];
   image: string;
   hoverImage: string;
   link?: string;
