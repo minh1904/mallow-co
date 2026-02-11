@@ -1,5 +1,5 @@
-import { ProjectHeader } from './components/ProjectHeader';
-import { ProjectMain } from './components/ProjectMain';
+import { ProjectHeader } from './ProjectHeader';
+import { ProjectMain } from './ProjectMain';
 
 export const ProjectSection = () => {
   return (

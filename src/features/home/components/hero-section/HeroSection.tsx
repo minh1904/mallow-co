@@ -3,8 +3,8 @@
 import { useMemo, useRef } from 'react';
 import { getItems } from '../../constants/constant';
 import { useMatterPhysics } from '../../hooks/useMatterPhysics';
-import { HeroItem } from './components/HeroItem';
-import { HeroText } from './components/HeroText';
+import { HeroItem } from './HeroItem';
+import { HeroText } from './HeroText';
 
 export const HeroSection = () => {
   const containerRef = useRef<HTMLDivElement>(null);

@@ -250,3 +250,38 @@ export const projects: Project[] = [
     title: 'NOCTURNE ARTS',
   },
 ];
+
+export const ButtonSectionItems = [
+  {
+    className: 'bg-black text-white',
+    dropX: 0.5,
+    dropY: 0.3,
+    id: 'bts1',
+    label: 'View',
+    type: 'button',
+  },
+  {
+    className: 'bg-black text-white',
+    dropX: 0.5,
+    dropY: 0.4,
+    id: 'bts2',
+    label: 'Work',
+    type: 'button',
+  },
+  {
+    className: 'bg-primary text-black',
+    dropX: 0.5,
+    dropY: 0.5,
+    id: 'bts3',
+    label: 'More',
+    type: 'button',
+  },
+  {
+    className: 'bg-primary text-black',
+    dropX: 0.5,
+    dropY: 0.6,
+    id: 'bts4',
+    label: '→',
+    type: 'button',
+  },
+];

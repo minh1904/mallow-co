@@ -1,10 +1,23 @@
-import { HeroSection, ProjectSection } from '../components';
+import {
+  BlogSection,
+  BrandSection,
+  ButtonSection,
+  HeroSection,
+  ProcessSection,
+  ProjectSection,
+  StudioSection,
+} from '../components';
 
 const HomePage = () => {
   return (
-    <div>
+    <div className="space-y-10 overflow-x-hidden">
       <HeroSection />
       <ProjectSection />
+      <ButtonSection />
+      <StudioSection />
+      <BrandSection />
+      <ProcessSection />
+      <BlogSection />
     </div>
   );
 };
